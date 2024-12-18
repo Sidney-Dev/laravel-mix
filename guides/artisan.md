@@ -1,4 +1,4 @@
-# Writing commands
+el# Writing commands
 
 create a new artisan command using `php artisan make:command SendEmails`
 
@@ -22,36 +22,61 @@ The signature property defines the command input expectations and can accept req
 
 Each signature argument can be accessed using the argument method of the command class.
 
-$this->argument('user');
-$this->argument('language');
+`$this->argument('user');`
+`$this->argument('language');`
 
 ## exit code
 We can manually specified the exit code when the command runs
-$this->error('Something went wrong.'); // outputs an error message
-$this->fail('Something went wrong.'); // outputs an error message and stops the execution with exit code 1
+// outputs an error message
+`$this->error('Something went wrong.');`
+
+// outputs an error message and stops the execution with exit code 1
+`$this->fail('Something went wrong.');`
 
 
-## Closure Commands - routes/console.php
+# Closure Commands - routes/console.php
 
 the console.php defines console based entry points into a laravel application.
 
-## definition
+## Usage
+
 the command method accepts two arguments: the command signature, and a closure which receives the command arguments and options including any dependencies.
 
-Artisan::command('mail:send {user}', function($user) {
+// the closure accepts any type-hint dependencies
+`Artisan::command('mail:send {user}', function($user) {`
 
-})->purpose('Send some email from here');
+`})->purpose('Send some email from here');`
 
 the command class has a "purpose" method that can be chained, which will be the command description.
 
+
 # Isolatable commands
 
-Sometimes you may wish to ensure that only onse instance of a command can run at a time. Implement the Illuminate\Contracts\Console\Isolatable interface on the command class
+To ensure that only one instance of the command run implement the Illuminate\Contracts\Console\Isolatable interface on the command class
+
+`class SendEmails extends Commands implements Isolatable`
 
 laravel uses a cache locking mechanism to create a lock. However, the locking duration can be customized.
 
-php artisan report:generate --lock-expiration=300
+The isolotable can also be called when writing the command via the prompt:
+`php artisan mail:send 1 --isolated` // this will return 0 exit code even if the command does not run
 
+to specify the exit code to be returned if it is not able to execute write the following:
+
+`php artisan mail:send 1 --isolated=12`
+
+## Lock expiration
+Isolated locks expire after the command is finished. Or if the command is interrupted and unable to finish, the lock will expire after one hour. However, the lock expiration time may be adjusted.
+
+### a) via artisan console
+
+`php artisan report:generate --lock-expiration=300`
+
+### b) via command class
+public function isolationLockExpiresAt(): DateTimeInterface|DateInterval
+{
+    return now()->addMinutes(5);
+}
 
 # Defining Input Expectations
 
