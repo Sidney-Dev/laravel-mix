@@ -1,4 +1,4 @@
-el# Writing commands
+# Writing commands
 
 create a new artisan command using `php artisan make:command SendEmails`
 
@@ -15,15 +15,46 @@ The command class ships with the following properties and methods
 
 Ideally, this class should not contain any logic, but be a trigger to other tasks/services.
 
-### signature property - $this->argument(argument name)
-The signature property defines the command input expectations and can accept required and optional arguments.
+### signature
+The signature property defines the command name and any input expectations such as arguments and options. 
 
 `protected $signature = "greet {user} {language}";`
+
+Arguments can also be made optional with a question mark right after it
+`protected $signature = "mail:send {user?}"`
+
+Arguments can also be optional with default value
+`protected $signature = "mail:send {user=foo}"`
+
+#### signature - arguments
 
 Each signature argument can be accessed using the argument method of the command class.
 
 `$this->argument('user');`
 `$this->argument('language');`
+
+// the following retreives all the arguments in an array
+`$this->arguments()`
+
+#### signature - option
+There are options with values and options without value.
+
+// option without value
+`protected $signature = "mail:send {user?} {--queue}"`
+If the queue is passed as an option, the queue argument is set to true.
+
+// the equal sign indicates that the user may pass a value to the option
+`protected $signature = "mail:send {user?} {--queue=}"`
+
+// creating a shortcut for the option
+`'mail:send {user} {--Q|queue}'`
+`php artisan mail:send 1 -Qdefault`
+
+### input descriptions
+`protected $signature = 'emails:send {user : The ID of each user} {--queue : Whether the job should be queued}';`
+
+options are retrieved using the option method of the class
+`$this->option('queue)`
 
 ## exit code
 We can manually specified the exit code when the command runs
@@ -78,24 +109,21 @@ public function isolationLockExpiresAt(): DateTimeInterface|DateInterval
     return now()->addMinutes(5);
 }
 
-# Defining Input Expectations
+# Input Arrays
 
-// optional argument
-protected $signature = "mail:sned {user?}"
+# Prompting for Missing input
+To prevent the command to fail if a required argument is not present, we can implement
+`Illuminate\Contracts\Console\PromptsForMissingInput` in the command class
 
-// optional argument with default value
-protected $signature = "mail:sned {user=foo}"
+This will prompt the user to enter the required input/s.
 
-# Command options
-There are options with values and options without value.
+And to customise the prompt message for each argument, we can implement the promptForMissingArgumentsUsing method
 
-// option without value
-protected $signature = "mail:sned {user?} {--queue}"
-If the queue is passed as an option, the queue argument is set to true.
+`protected function promptForMissingArgumentsUsing(): array`
+`{`
+`    return [`
+`        'user' => ['Which user ID should receive the mail?', 'placeholder text'],` optional placeholder
+`    ];`
+`}`
 
-// the equal sign indicates that the user may pass a value to the option
-protected $signature = "mail:sned {user?} {--queue=}"
-
-// creatin g a shortcut for the option
-'mail:send {user} {--Q|queue}'
-php artisan mail:send 1 -Qdefault
+# Prompting for input
